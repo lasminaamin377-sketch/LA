@@ -1,11 +1,6 @@
 name: LA
-
-
-
 on:
   workflow_dispatch:
-
-
 
 jobs:
   rdp:
@@ -13,9 +8,7 @@ jobs:
     timeout-minutes: 14
 
 
-
     steps:
-
       - name: 》Menyiapkan Konfigurasi Core RDP ...
         run: |
           # Enable Remote Desktop and disable Network Level Authentication (if needed)
@@ -28,14 +21,13 @@ jobs:
           # Remove any existing rule with the same name to avoid duplication
           netsh advfirewall firewall delete rule name="RDP-Tailscale"
 
-          
-
           # For testing, allow any incoming connection on port 3389
           netsh advfirewall firewall add rule name="RDP-Tailscale" `
             dir=in action=allow protocol=TCP localport=3389
           # (Optional) Restart the Remote Desktop service to ensure changes take effect
           Restart-Service -Name TermService -Force
-      - name: 》 Siapkan User & Password ....
+          
+      - name: 》Siapkan User & Password ....
         run: |
           $password = "a2@"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
@@ -44,32 +36,26 @@ jobs:
           }
           Add-LocalGroupMember -Group "Administrators" -Member "la1" -ErrorAction SilentlyContinue
           Add-LocalGroupMember -Group "Remote Desktop Users" -Member "la1" -ErrorAction SilentlyContinue
-          
-
           echo "RDP_CREDS=User: la1 | Pass: $Password" >> $env:GITHUB_ENV
-
-          
 
           if (-not (Get-LocalUser -Name "la1")) {
               Write-Error "User creation failed"
               exit 1
           }
+          
       - name: 》Memasang Tailscale ...
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           $installerPath = "$env:TEMP\tailscale.msi"
 
-          
-
           Invoke-WebRequest -Uri $tsUrl -OutFile $installerPath
           Start-Process msiexec.exe -ArgumentList "/i", "`"$installerPath`"", "/quiet", "/norestart" -Wait
           Remove-Item $installerPath -Force
-      - name: 》 Establish Koneksi Tailscale ...
+          
+      - name: 》Establish Koneksi Tailscale ...
         run: |
           # Siapkan AuthKey IP Address ...
           & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-runner-$env:GITHUB_RUN_ID
-
-          
 
           # Wait for Tailscale to assign an IP
           $tsIP = $null
@@ -80,25 +66,19 @@ jobs:
               $retries++
           }
 
-          
-
           if (-not $tsIP) {
               Write-Error "Tailscale IP not assigned. Exiting."
               exit 1
           }
           echo "TAILSCALE_IP=$tsIP" >> $env:GITHUB_ENV
 
-      
-
-      - name: 》 Koneksi Maintain ...
+      - name: 》Koneksi Maintain ...
         run: |
           Write-Host "..."
           Write-Host "IP Address: $env:TAILSCALE_IP"
           Write-Host "Login:"
           Write-Host "$(echo $env:RDP_CREDS)"
-          Write-Host ">> BISMILLAH <<"
-
-          
+          Write-Host ">> BISMILLAH <<"        
 
           # Keep runner active indefinitely (or until manually cancelled)
           while ($true) {
