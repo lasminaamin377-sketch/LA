@@ -76,7 +76,6 @@ jobs:
         run: |
           Write-Host "..."
           Write-Host "IP Address: $env:TAILSCALE_IP"
-          Write-Host "Login:"
           Write-Host "$(echo $env:RDP_CREDS)"
           Write-Host ">> BISMILLAH <<"        
 
